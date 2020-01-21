@@ -1,15 +1,15 @@
 import argparse
 import numpy as np
 import pandas as pd
-from sklearn import linear_model
+import sindy
 
 
 def split_data(values):
     dynamic_data = values[:, -12:] #excract only x y z Vx Vy Vz x_sim y_sim z_sim Vx_sim Vy_sim Vz_sim
-    next_state = dynamic_data[1:, :6]
-    curr_state_sim = dynamic_data[:-1, 6:]
+    real_state = dynamic_data[:, :6]
+    sim_state = dynamic_data[:, 6:]
 
-    return next_state, curr_state_sim
+    return real_state, sim_state
 
 
 def smape(satellite_predicted_values, satellite_true_values): 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     print(df.columns)
     print(df.head)
 
-    a, b = split_data(df.values)
+    a, b = split_data(df.loc[df['sat_id'] == 0].values)
     del df
 
     print(f'\nNext states \n{a}')
@@ -35,4 +35,4 @@ if __name__ == '__main__':
 
     print(f'SMAPE {100 * (1 - smape(a, b))}')
 
-    #clf = linear_model.Lasso(alpha=0.1)
+    sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:, 5])
