@@ -26,7 +26,7 @@ def compute_sindy(x, y, z, Vx, Vy, Vz):
     clf = linear_model.Lasso(alpha=0.01, max_iter=5000)
 
     f = lambda arg_x: (arg_x[1:], arg_x[:-1])
-    pow_f = lambda arg_x, deg: [np.power(arg_x, i) for i in range(-deg, deg+1) if i != 0]
+    pow_f = lambda arg_x, deg: [np.power(arg_x, i) for i in range(-deg, deg+1) if i not in (0, 1)]
     pairs = lambda arg_x: [e[0] * e[1] * e[2] for e in list(itertools.combinations(arg_x, 3))]
 
     (p_x, c_x) = f(x)
@@ -46,7 +46,6 @@ def compute_sindy(x, y, z, Vx, Vy, Vz):
 
     print(f'The shape of data matrix {dmatrix.T.shape}')
 
-    #noise = 0.1 * np.random.randn(*dmatrix.T.shape)
     for target in [p_x, p_y, p_z, p_Vx, p_Vy, p_Vz]:
         clf.fit(dmatrix.T , target)#(p_x - c_x) / delta)
         print('Coeff')
