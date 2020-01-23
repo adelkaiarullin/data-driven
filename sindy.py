@@ -46,34 +46,31 @@ def compute_sindy(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
     r = np.sqrt(c_x ** 2 + c_y ** 2 + c_z ** 2)
     v = np.sqrt(c_Vx ** 2 + c_Vy ** 2 + c_Vz ** 2)
     
-    #deg = 1
-    #c_all = pow_f(r, deg) + pow_f(v, deg) + pow_f(c_x, deg) + pow_f(c_y, deg) + pow_f(c_z, deg) + pow_f(c_Vx, deg) +  pow_f(c_Vy , deg) + pow_f(c_Vz, deg) 
-    #c_all = comb(c_all) + c_all
     c_all = [np.ones_like(r), t, 1/r, r, v, c_x, c_y, c_z, c_Vx, c_Vy, c_Vz, np.sin(r), np.sin(v)]#best
-    #c_all = [1/np.square(r), v, c_x, c_y, c_z, c_Vx, c_Vy, c_Vz, c_x / r, c_y / r, c_z / r, c_Vx / v, c_Vy / v, c_Vz / v, 
-    #(c_x * c_Vx + c_y * c_Vy + c_z * c_Vz) / (r * v), np.arccos((c_x * c_Vx + c_y * c_Vy + c_z * c_Vz) / (r * v)),
-    #np.arccos(c_x / r), np.arccos(c_y / r), np.arccos(c_z / r), np.arccos(c_Vx / v), np.arccos(c_Vy / v), np.arccos(c_Vz / v), 
-    #np.square(v) * r, np.square(v) / r, np.square(c_Vx) / r, np.square(c_Vy) / r, np.square(c_Vz) / r,
-    #c_x/np.power(r, 3), c_y/np.power(r, 3), c_z/np.power(r, 3)]
 
     dmatrix = np.vstack(comb(c_all) + [ t, 1/r, r, v, c_x, c_y, c_z, c_Vx, c_Vy, c_Vz, np.sin(r), np.sin(v)])
 
     #print(f'The shape of data matrix {dmatrix.T.shape}')
     dmatrix = dmatrix.T# + 0.1 * np.random.randn(*dmatrix.T.shape)
     coeff = []
+    intercept = []
     dmatrix -= dmatrix.mean(axis=0)
     dmatrix /= dmatrix.std(axis=0)
 
     for target in [p_x, p_y, p_z, p_Vx, p_Vy, p_Vz]:
-        clf = linear_model.Lasso(alpha=1e-3, max_iter=10000)
+        clf = linear_model.Lasso(alpha=1e-3, max_iter=5000)
         #clf = linear_model.HuberRegressor(max_iter=200)
         clf.fit(dmatrix , target)
         coeff.append(clf.coef_)
+        intercept.append(clf.intercept_)
+        #print(clf.coef_)
+        #print(clf.intercept_)
 
     coeff = np.vstack(coeff).T
+    intercept = np.array(intercept).reshape(1, 6)
     source = np.vstack([c_x, c_y, c_z, c_Vx, c_Vy, c_Vz]).T
     target = np.vstack([p_x, p_y, p_z, p_Vx, p_Vy, p_Vz]).T
-    sm = 100 * (1 - idds.smape(target, dmatrix.dot(coeff) ))
+    sm = 100 * (1 - idds.smape(target, dmatrix.dot(coeff) + intercept))
     #print(f'Coeff \n{coeff}')
     #sm = 100 * (1 - idds.smape(target, clf.predict(coeff) ))
     print(f'SMAPE {sm}')

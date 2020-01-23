@@ -1,4 +1,5 @@
 import argparse
+from collections import defaultdict
 import numpy as np
 import pandas as pd
 import itertools
@@ -38,12 +39,14 @@ if __name__ == '__main__':
     #print(dt.timestamp())
 
     hist = []
-    coeff = []
-    for i in range(40):
+    coeff = defaultdict(list)
+
+    for i in range(600):
         a, b, t = split_data(df.loc[df['sat_id'] == i].values)
         #print((a - b) / a * 100)
         h, c = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5], t)
-        hist.append(h), coeff.append(c[:, 3])
+        hist.append(h), coeff['x'].append(c[:, 0]), coeff['y'].append(c[:, 1]), coeff['z'].append(c[:, 2]), coeff['Vx'].append(c[:, 3])
+        coeff['Vy'].append(c[:, 4]), coeff['Vz'].append(c[:, 5])
 
     #a, b = split_data(df.values)
     #score = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:, 5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:, 5])
@@ -57,13 +60,16 @@ if __name__ == '__main__':
 
     dynamics = ['1', 't', 'r', '1/r', 'v', 'x', 'y', 'z', 'Vx', 'Vy', 'Vz', 'sin r', 'sin v']
     dynamics = list(itertools.combinations(dynamics, 3)) + ['t', 'r', '1/r', 'v', 'x', 'y', 'z', 'Vx', 'Vy', 'Vz', 'sin r', 'sin v']
-    coeff = np.vstack(coeff)
-    np.set_printoptions(threshold=np.inf)
-    print(f'All coeff \n{coeff.shape}')
-    for c, d in zip(coeff.T, dynamics):
-        (_, p_val) = stats.ttest_1samp(c, 0.0)
-        if p_val < 0.05:
-            print(p_val,c.shape, d)
+
+    for k, v in coeff.items():
+        print(k)
+        coeff = np.vstack(v)
+        np.set_printoptions(threshold=np.inf)
+        print(f'All coeff \n{coeff.shape}')
+        for c, d in zip(coeff.T, dynamics):
+            (_, p_val) = stats.ttest_1samp(c, 0.0)
+            if p_val < 0.05:
+                print(p_val,c.shape, d)
 
     # print(f'SMAPE {100 * (1 - smape(a, b))}')
 
