@@ -20,7 +20,7 @@ def lorenz(x, y, z, s=10, r=28, b=8/3):
     return x_dot, y_dot, z_dot
 
 
-def get_points(dt = 0.01, num_steps = 10000):
+def get_points(dt = 0.01, num_steps = 100, s=10, r=28, b=8/3):
     # Need one more for the initial values
     xs = np.empty(num_steps + 1)
     ys = np.empty(num_steps + 1)
@@ -32,7 +32,7 @@ def get_points(dt = 0.01, num_steps = 10000):
     # Step through "time", calculating the partial derivatives at the current point
     # and using them to estimate the next point
     for i in range(num_steps):
-        x_dot, y_dot, z_dot = lorenz(xs[i], ys[i], zs[i])
+        x_dot, y_dot, z_dot = lorenz(xs[i], ys[i], zs[i] ,s, r, b)
         xs[i + 1] = xs[i] + (x_dot * dt)
         ys[i + 1] = ys[i] + (y_dot * dt)
         zs[i + 1] = zs[i] + (z_dot * dt)
@@ -46,7 +46,11 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax = fig.gca(projection='3d')
 
-    ax.plot(xs, ys, zs, lw=0.5)
+    ax.plot(xs, ys, zs, lw=1, c='r')
+    
+    xs, ys, zs = get_points(s=9.91, r=27.4, b=2.76)
+    ax.plot(xs, ys, zs, lw=0.5, c='g')
+
     ax.set_xlabel("X Axis")
     ax.set_ylabel("Y Axis")
     ax.set_zlabel("Z Axis")
