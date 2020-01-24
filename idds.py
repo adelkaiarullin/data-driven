@@ -31,7 +31,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     df = pd.read_csv(args.train, sep=',')
-    #test_df = pd.read_csv(args.test, sep=',')
+    test_df = pd.read_csv(args.test, sep=',')
 
     #print(df.columns)
     #print(df.head)
@@ -41,12 +41,17 @@ if __name__ == '__main__':
     hist = []
     coeff = defaultdict(list)
 
-    for i in range(600):
-        a, b, t = split_data(df.loc[df['sat_id'] == i].values)
-        #print((a - b) / a * 100)
-        h, c = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5], t)
-        hist.append(h), coeff['x'].append(c[:, 0]), coeff['y'].append(c[:, 1]), coeff['z'].append(c[:, 2]), coeff['Vx'].append(c[:, 3])
-        coeff['Vy'].append(c[:, 4]), coeff['Vz'].append(c[:, 5])
+    a, b, t = split_data(df.values)
+    #print((a - b) / a * 100)
+    h, c = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5], t, test_df.values)
+
+
+    # for i in range(600):
+    #     a, b, t = split_data(df.loc[df['sat_id'] == i].values)
+    #     #print((a - b) / a * 100)
+    #     h, c = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5], t)
+    #     hist.append(h), coeff['x'].append(c[:, 0]), coeff['y'].append(c[:, 1]), coeff['z'].append(c[:, 2]), coeff['Vx'].append(c[:, 3])
+    #     coeff['Vy'].append(c[:, 4]), coeff['Vz'].append(c[:, 5])
 
     #a, b = split_data(df.values)
     #score = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:, 5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:, 5])
