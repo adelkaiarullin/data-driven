@@ -8,9 +8,14 @@ import lorenz
 
 def get_predicted_track(clf, x, step):
     track = [x]
+
     while step > 0:
         step -= 1
-        track.append(clf.predict(track[-1]))
+        state = np.zeros(shape=(1, 6), dtype=np.float32)
+        for i, name in enumerate(['x', 'y', 'z', 'vx', 'vy', 'vz']):
+            state[0, i] = clf.predict(get_dynamics(name, *x))
+        x = state
+        track.append(state)
 
     return track
 
@@ -75,7 +80,7 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, t):
         clf = linear_model.Ridge()
         #clf = linear_model.HuberRegressor(max_iter=200)
         clf.fit(dmatrix , target)
-        #track = get_predicted_track(clf, np.array([c_x]))#todo 
+        track = get_predicted_track(clf, np.array([c_x[0], c_y[0], c_z[0], c_Vx[0], c_Vy[0], c_Vz[0], (p_t - c_t)[0]]), p_x.shape[0] - 1)
         arr_p.append(clf.predict(dmatrix))
             
     source = np.vstack([c_x, c_y, c_z, c_Vx, c_Vy, c_Vz]).T
