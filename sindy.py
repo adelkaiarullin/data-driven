@@ -109,37 +109,37 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
     return sm
 
 
-#def compute_sindy(x, y, z, Vx, Vy, Vz, t):
-def compute_sindy(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
+def compute_sindy(x, y, z, Vx, Vy, Vz, t):
+#def compute_sindy(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
     f = lambda arg_x: (arg_x[1:], arg_x[:-1])
     comb = lambda arg_x: [e[0] * e[1] *e[2] for e in list(itertools.combinations(arg_x, 3))]
 
     (p_t, c_t) = f(t)
-    dt = np.zeros_like(x)
-    dt[1:] = p_t - c_t
-    (p_x, c_x) = x, sx#f(x)
-    (p_y, c_y) = y, sy#f(y)
-    (p_z, c_z) = z, sz#f(z)
+    #dt = np.zeros_like(x)
+    dt = p_t - c_t
+    (p_x, c_x) = f(x)
+    (p_y, c_y) = f(y)
+    (p_z, c_z) = f(z)
 
-    (p_Vx, c_Vx) = Vx, sVx#f(Vx)
-    (p_Vy, c_Vy) = Vy, sVy#f(Vy)
-    (p_Vz, c_Vz) = Vz, sVz#f(Vz)
+    (p_Vx, c_Vx) = f(Vx)
+    (p_Vy, c_Vy) = f(Vy)
+    (p_Vz, c_Vz) = f(Vz)
     
     r = np.sqrt(c_x ** 2 + c_y ** 2 + c_z ** 2)
     v = np.sqrt(c_Vx ** 2 + c_Vy ** 2 + c_Vz ** 2)
     
-    c_all = [np.ones_like(r), dt, 1/r, r, v, c_x, c_y, c_z, c_Vx, c_Vy, c_Vz, np.sin(r), np.sin(v)]#best
-    dmatrix = np.vstack(comb(c_all) + [dt, 1/r, r, v, c_x, c_y, c_z, c_Vx, c_Vy, c_Vz, np.sin(r), np.sin(v)])
+    c_all = [np.ones_like(r), dt, 1/r, r, v, c_x, c_y, c_z, c_Vx, c_Vy, c_Vz]#best
+    dmatrix = np.vstack(comb(c_all) + [dt, 1/r, r, v, c_x, c_y, c_z, c_Vx, c_Vy, c_Vz])
 
     #print(f'The shape of data matrix {dmatrix.T.shape}')
     dmatrix = dmatrix.T# + 0.1 * np.random.randn(*dmatrix.T.shape)
     coeff = []
     intercept = []
-    dmatrix -= dmatrix.mean(axis=0)
-    dmatrix /= dmatrix.std(axis=0)
+    #dmatrix -= dmatrix.mean(axis=0)
+    #dmatrix /= dmatrix.std(axis=0)
 
     for target in [p_x - c_x, p_y - c_y, p_z - c_z, p_Vx - c_Vx, p_Vy - c_Vy, p_Vz - c_Vz]:
-        clf = linear_model.Lasso(alpha=1e-2, max_iter=5000)
+        clf = linear_model.Lasso(alpha=1e-2, max_iter=1000)
         #clf = linear_model.Ridge()
         #clf = linear_model.HuberRegressor(max_iter=10)
         clf.fit(dmatrix , target)
