@@ -63,15 +63,10 @@ if __name__ == '__main__':
     for i in range(600):
         a, b, t = split_data(df.loc[df['sat_id'] == i].values)
         #print((a - b) / a * 100)
-<<<<<<< HEAD
-        h = sindy.compute_dynamics(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5], t)
+        h = sindy.compute_dynamics(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5],t)
         #h, c = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5], t)
-=======
-        #h = sindy.compute_dynamics(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5], t)
-        h, c = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], t)
->>>>>>> f7ac22a2a53a4584c1b83f4209a30f5fbfa35e99
-        hist.append(h), coeff['x'].append(c[:, 0]), coeff['y'].append(c[:, 1]), coeff['z'].append(c[:, 2]), coeff['Vx'].append(c[:, 3])
-        coeff['Vy'].append(c[:, 4]), coeff['Vz'].append(c[:, 5])
+        hist.append(h)#, coeff['x'].append(c[:, 0]), coeff['y'].append(c[:, 1]), coeff['z'].append(c[:, 2]), coeff['Vx'].append(c[:, 3])
+        #coeff['Vy'].append(c[:, 4]), coeff['Vz'].append(c[:, 5])
 
         # if i % 100 == 0:
         #     visualize_trajectory(a[:, 0], a[:, 1], a[:, 2], b[:, 0], b[:, 1], b[:, 2])

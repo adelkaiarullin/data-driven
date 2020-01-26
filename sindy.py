@@ -9,18 +9,16 @@ import lorenz
 def get_predicted_track(clfs, x, step, dt):
     x = x.reshape(1, 6)
     track = [x]
-
     k = 0
     while k < step:
-        print(k, x.shape)
         state = np.zeros(shape=(1, 6), dtype=np.float32)
         for i, (name, clf) in enumerate(zip(['x', 'y', 'z', 'vx', 'vy', 'vz'], clfs)):
-            s = clf.predict(get_dynamics(name, x[0][0],x[0][1], x[0][2], x[0][3], x[0][4], x[0][5], dt[k]))
-            print(s)
+            dm = get_dynamics(name, x[0][0],x[0][1], x[0][2], x[0][3], x[0][4], x[0][5], dt[k])
+            print(f'Dm {dm} \n{dm.shape}')
+            s = clf.predict(dm)
             state[0][i] = s
-        x = state
-        track.append(state)
-        print(state)
+        x += state
+        track.append(x)
         k += 1
 
     return track
@@ -34,26 +32,15 @@ def get_dynamics(name, x, y, z, vx, vy, vz, dt):
     if name == 'x':
         return np.vstack([dt*vx, r*x, r*vx, v*x, v*vx, dt*r*vx, dt*v*vx, vx, r*v*vx, vx]).T
     elif name == 'y':
-        return np.vstack([dt*vy, r*y, r*vy, v*y, ]).T                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
-3.2338847497149147e-11 (600,) 1vVy                                                                                                                                                                                                                                                        
-0.0012032405869886232 (600,) t1/rVy
-4.1823307865844375e-28 (600,) trVy
-9.892719452142442e-05 (600,) tvVx
-4.417576912508892e-18 (600,) tvVy
-9.79512685162856e-22 (600,) 1/rrVy
-0.00109630867765413 (600,) 1/rrVz
-0.0029769357845612987 (600,) 1/rvy
-6.249901927491436e-28 (600,) rvVy
-2.8101106928322777e-28 (600,) Vy
-0.002978608492828604 (600,) Vz
+        return np.vstack([dt*vy, r*y, r*vy, v*y, v*vy, dt*r*vy, dt*v*vy, vy, r*v*vy, vy]).T                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
     elif name == 'z':
-        return np.vstack([dt*z, dt*vz, r*z, z/r, vz*z/r, vz/r, v*z, v*vz, dt*r*v, dt*r*vz, dt*z/r, dt*vz/r, dt*v*z, dt*v*vz, z, vz, r*v*z]).T
+        return np.vstack([dt*vz, r*z, r*vz, v*z, v*vz, dt*r*vz, dt*v*vz, vz, r*v*vz, vz]).T
     elif name == 'vx':
-        return np.vstack([dt*vx, vx/r, v*x, dt*r*x, dt*vx/r, dt*v*x, dt*v*vx, v*vx/r, x]).T
+        return np.vstack([dt*x, dt*vx, r*x, v*x, dt*x/r, dt*v*x, dt*v*vx, r*v*vx]).T
     elif name == 'vy':
-        return np.vstack([dt*y, dt*vy, vy/r, v*y, dt*vy/r, dt*v*y, dt*v*vy, v*vy/r, y]).T
+        return np.vstack([dt*y, dt*vy, r*y, v*y, dt*y/r, dt*v*y, dt*v*vy, r*v*vy]).T
     elif name == 'vz':
-        return np.vstack([dt*z, dt*vz, vz/r, v*z, v*vz, dt*r*z, dt*vz/r, dt*v*z, dt*v*vz, z, v*vz/r]).T
+        return np.vstack([dt*z, dt*vz, r*z, v*z, dt*z/r, dt*v*z, dt*v*vz, r*v*vz]).T
 
 
 
@@ -94,28 +81,25 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
     (p_Vz, c_Vz) = Vz, sVz#f(Vz)
 
     arr_p = []
-    # clfs = []
+    #clfs = []
     for target, name in zip([p_x - c_x, p_y - c_y, p_z - c_z, p_Vx - c_Vx, p_Vy - c_Vy, p_Vz - c_Vz], ['x', 'y', 'z', 'vx', 'vy', 'vz']):
         dmatrix = get_dynamics(name, c_x, c_y, c_z, c_Vx, c_Vy, c_Vz, dt)
         dmatrix -= dmatrix.mean(axis=0)
         dmatrix /= dmatrix.std(axis=0)
-        #clf = linear_model.Lasso(alpha=1e-3, max_iter=1000)
-        clf = linear_model.Ridge()
-        #clf = linear_model.HuberRegressor(max_iter=200)
+        clf = linear_model.LinearRegression(n_jobs=-1)
         clf.fit(dmatrix , target)
         #clfs.append(clf)
         arr_p.append(clf.predict(dmatrix))
-        print(f'Coeff {name}\n{clf.coef_}')
+        #print(f'Coeff {name}\n{clf.coef_}')
     
     #track = get_predicted_track(clfs, np.array([c_x[0], c_y[0], c_z[0], c_Vx[0], c_Vy[0], c_Vz[0]]), p_x.shape[0] - 1, p_t-c_t)
     source = np.vstack([c_x, c_y, c_z, c_Vx, c_Vy, c_Vz]).T
     predict = np.vstack(arr_p).T
     target = np.vstack([p_x, p_y, p_z, p_Vx, p_Vy, p_Vz]).T
     sm = 100 * (1 - idds.smape(target, predict + source))
-    #print(f'Coeff \n{coeff}')
-    #sm = 100 * (1 - idds.smape(target, clf.predict(coeff) ))
     print(f'SMAPE {sm}')
-    print(f'SMAPE {100 * (1 - idds.smape(target, source))}')
+    st_sm = 100 * (1 - idds.smape(target, source))
+    print(f'SMAPE {st_sm}')
      
     return sm
 
