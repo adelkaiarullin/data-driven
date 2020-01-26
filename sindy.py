@@ -32,9 +32,20 @@ def get_dynamics(name, x, y, z, vx, vy, vz, dt):
     r = np.sqrt(x * x + y * y + z * z)
 
     if name == 'x':
-        return np.vstack([dt*x, r*x, x/r, vx/r, v*vx, dt*vx/r, dt*v*x, x, vx, r*v*x, v*x/r, v*vx/r, vx]).T
+        return np.vstack([dt*vx, r*x, r*vx, v*x, v*vx, dt*r*vx, dt*v*vx, vx, r*v*vx, vx]).T
     elif name == 'y':
-        return np.vstack([dt*y, dt*vy, r*y, y/r, vy/r, v*vy, dt*y/r, dt*vy/r, dt*v*y, y, vy, r*v*y, v*y/r, v*vy/r, vy]).T
+        return np.vstack([dt*vy, r*y, r*vy, v*y, ]).T                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+3.2338847497149147e-11 (600,) 1vVy                                                                                                                                                                                                                                                        
+0.0012032405869886232 (600,) t1/rVy
+4.1823307865844375e-28 (600,) trVy
+9.892719452142442e-05 (600,) tvVx
+4.417576912508892e-18 (600,) tvVy
+9.79512685162856e-22 (600,) 1/rrVy
+0.00109630867765413 (600,) 1/rrVz
+0.0029769357845612987 (600,) 1/rvy
+6.249901927491436e-28 (600,) rvVy
+2.8101106928322777e-28 (600,) Vy
+0.002978608492828604 (600,) Vz
     elif name == 'z':
         return np.vstack([dt*z, dt*vz, r*z, z/r, vz*z/r, vz/r, v*z, v*vz, dt*r*v, dt*r*vz, dt*z/r, dt*vz/r, dt*v*z, dt*v*vz, z, vz, r*v*z]).T
     elif name == 'vx':
