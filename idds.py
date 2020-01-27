@@ -90,8 +90,12 @@ if __name__ == '__main__':
         print(f'All coeff \n{coeff.shape}')
         for c, d in zip(coeff.T, dynamics):
             (_, p_val) = stats.ttest_1samp(c, 0.0)
-            if p_val < 0.005:
+            if k in ['x', 'y', 'z']:
+                threshold = 1e-3
+            else:
+                threshold = 0.05
+
+            if p_val < threshold:
                 print(p_val,c.shape, ''.join(d))
 
     # print(f'SMAPE {100 * (1 - smape(a, b))}')
-
