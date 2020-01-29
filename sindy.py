@@ -4,6 +4,7 @@ from sklearn import linear_model
 from sklearn.kernel_ridge import KernelRidge
 # import pandas as pd
 # import json
+from sklearn.tree import DecisionTreeRegressor
 import idds
 import lorenz
 
@@ -90,6 +91,7 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
     (p_Vz, c_Vz) = Vz, sVz#f(Vz)
 
     arr_p = []
+    th = int(p_x.shape[0] * 0.8)
     #clfs = []
     # arr_coeff = {}
     for target, name in zip([p_x - c_x, p_y - c_y, p_z - c_z, p_Vx - c_Vx, p_Vy - c_Vy, p_Vz - c_Vz], ['x', 'y', 'z', 'vx', 'vy', 'vz']):
@@ -97,8 +99,11 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
         dmatrix -= dmatrix.mean(axis=0)
         dmatrix /= dmatrix.std(axis=0)
 
-        clf = linear_model.LinearRegression(n_jobs=-1)
-        clf.fit(dmatrix , target)
+
+        #clf = linear_model.LinearRegression(n_jobs=-1)
+        clf = DecisionTreeRegressor(max_depth=20)
+        clf.fit(dmatrix[:th, :] , target[:th])
+        print(f'Score {clf.score(dmatrix[th:, :] , target[th:])}')
         #clfs.append(clf)
         arr_p.append(clf.predict(dmatrix))
         #print(f'Coeff {name}\n{clf.coef_}')
@@ -116,7 +121,7 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
     print(f'SMAPE {st_sm}')
 
     # global_dict[len(global_dict)] = {'trajectory':source.tolist(), 'targets':arr_coeff}
-    if len(global_dict) == 600:
+    # if len(global_dict) == 600:
     #     with open('data.json', 'w') as json_file:
     #         json.dump(global_dict, json_file)
         # df = pd.DataFrame.from_dict(global_dict)
@@ -155,10 +160,13 @@ def compute_sindy(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
     dmatrix /= dmatrix.std(axis=0)
 
     for target in [p_x - c_x, p_y - c_y, p_z - c_z, p_Vx - c_Vx, p_Vy - c_Vy, p_Vz - c_Vz]:
-        clf = linear_model.Lasso(alpha=1e-2, max_iter=10000)
+        #clf = linear_model.Lasso(alpha=1e-2, max_iter=10000)
         #clf = linear_model.Ridge()
         #clf = linear_model.HuberRegressor(max_iter=10)
+        clf = DecisionTreeRegressor(max_features='log2')
         clf.fit(dmatrix , target)
+        score = clf.score(dmatrix , target)
+        print(f'Score {score}')
         coeff.append(clf.coef_)
         intercept.append(clf.intercept_)
         #print(clf.coef_)
