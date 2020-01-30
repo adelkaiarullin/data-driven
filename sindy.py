@@ -2,6 +2,7 @@ import itertools
 import numpy as np
 from sklearn import linear_model
 from sklearn.kernel_ridge import KernelRidge
+from sklearn.svm import LinearSVR
 # import pandas as pd
 # import json
 from sklearn.tree import DecisionTreeRegressor
@@ -101,7 +102,9 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
 
 
         #clf = linear_model.LinearRegression(n_jobs=-1)
-        clf = DecisionTreeRegressor(max_depth=20)
+        #clf = DecisionTreeRegressor(max_depth=20)
+        clf = LinearSVR(random_state=0, tol=1e-6)
+        
         clf.fit(dmatrix[:th, :] , target[:th])
         print(f'Score {clf.score(dmatrix[th:, :] , target[th:])}')
         #clfs.append(clf)
