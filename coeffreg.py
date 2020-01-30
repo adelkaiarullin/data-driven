@@ -2,6 +2,7 @@ import json as js
 import numpy as np
 from sklearn import linear_model
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.svm import LinearSVR
 
 
 if __name__ == '__main__':
@@ -9,7 +10,8 @@ if __name__ == '__main__':
         data_dict = js.load(json_file)
 
     #clf = DecisionTreeRegressor(max_depth=16)
-    clf = linear_model.LinearRegression(n_jobs=-1)
+    #clf = linear_model.LinearRegression(n_jobs=-1)
+    clf = LinearSVR(random_state=0, tol=1e-5)
     
     data = []
     targets = []
