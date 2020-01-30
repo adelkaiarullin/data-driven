@@ -3,6 +3,8 @@ import numpy as np
 from sklearn import linear_model
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import LinearSVR
+from sklearn.gaussian_process import GaussianProcessRegressor as gp
+from sklearn.gaussian_process.kernels import WhiteKernel, ExpSineSquared, RBF, RationalQuadratic, DotProduct, CompoundKernel
 # import pandas as pd
 # import json
 from sklearn.tree import DecisionTreeRegressor
@@ -92,7 +94,7 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
     (p_Vz, c_Vz) = Vz, sVz#f(Vz)
 
     arr_p = []
-    th = int(p_x.shape[0] * 0.8)
+    th = int(p_x.shape[0] * 0.9)
     #clfs = []
     # arr_coeff = {}
     for target, name in zip([p_x - c_x, p_y - c_y, p_z - c_z, p_Vx - c_Vx, p_Vy - c_Vy, p_Vz - c_Vz], ['x', 'y', 'z', 'vx', 'vy', 'vz']):
@@ -103,8 +105,9 @@ def compute_dynamics(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz, t):
 
         #clf = linear_model.LinearRegression(n_jobs=-1)
         #clf = DecisionTreeRegressor(max_depth=20)
-        clf = LinearSVR(random_state=0, tol=1e-6)
-        
+        #clf = LinearSVR(random_state=0, tol=1e-6)
+        clf = KernelRidge(kernel=(ExpSineSquared(1.0, 5.0, periodicity_bounds=(1e-2, 1e1))), alpha=1e-3)
+        #clf = gp(kernel=( DotProduct() + ExpSineSquared() + WhiteKernel() + RBF() + RationalQuadratic()), alpha=1)
         clf.fit(dmatrix[:th, :] , target[:th])
         print(f'Score {clf.score(dmatrix[th:, :] , target[th:])}')
         #clfs.append(clf)
