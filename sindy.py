@@ -36,7 +36,7 @@ def compute_sindy_for_lorenz():
 
 
 def compute_sindy(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz):
-    l = 4
+    l = 5
 
     (p_x, c_x) = x[l:], sx[l:]#f(x)
     (p_y, c_y) = y[l:], sy[l:]#f(y)
@@ -65,9 +65,9 @@ def compute_sindy(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz):
     error = target - source
 
     #clf = MultiOutputRegressor(estimator=KernelRidge(kernel=RationalQuadratic()))
-    clf = MultiOutputRegressor(estimator=DecisionTreeRegressor(criterion='mae'))
+    clf = MultiOutputRegressor(estimator=DecisionTreeRegressor(criterion='mae', max_depth=5))
     
-    clf.fit(dmatrix[:th, :], error[:th, :])
+    clf.fit(dmatrix[:th:25, :], error[:th:25, :])
     score = clf.score(dmatrix[th:, :], error[th:, :])
     predict = clf.predict(dmatrix)
     print(f'Score {score}')
