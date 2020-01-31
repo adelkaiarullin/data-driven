@@ -64,10 +64,10 @@ def compute_sindy(x, y, z, Vx, Vy, Vz, sx, sy, sz, sVx, sVy, sVz):
     target = np.vstack([p_x, p_y, p_z, p_Vx, p_Vy, p_Vz]).T
     error = target - source
 
-    #clf = MultiOutputRegressor(estimator=KernelRidge(kernel=RationalQuadratic()))
-    clf = MultiOutputRegressor(estimator=DecisionTreeRegressor(criterion='mae', max_depth=5))
+    clf = MultiOutputRegressor(estimator=KernelRidge(kernel=RationalQuadratic()))
+    #clf = MultiOutputRegressor(estimator=DecisionTreeRegressor(criterion='mae', max_depth=5))
     
-    clf.fit(dmatrix[:th:25, :], error[:th:25, :])
+    clf.fit(dmatrix[:th:20, :], error[:th:20, :])
     score = clf.score(dmatrix[th:, :], error[th:, :])
     predict = clf.predict(dmatrix)
     print(f'Score {score}')
