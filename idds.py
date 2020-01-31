@@ -1,13 +1,14 @@
 import argparse
-from collections import defaultdict
 import numpy as np
 import pandas as pd
-import itertools
 import matplotlib.pyplot as plt
-from scipy import stats
 import random
 import datetime
 import sindy
+
+
+def save_submission(arr):
+    np.savetxt('submission.csv', arr, delimiter=',', fmt='%d,%f,%f,%f,%f,%f,%f', header='id,x,y,z,Vx,Vy,Vz')
 
 
 def visualize_trajectory(x, y, z, sx, sy, sz):
@@ -26,11 +27,30 @@ def visualize_trajectory(x, y, z, sx, sy, sz):
 
 def split_data(values):
     dynamic_data = values[:, -12:] #excract only x y z Vx Vy Vz x_sim y_sim z_sim Vx_sim Vy_sim Vz_sim
-    tunix = np.array([datetime.datetime.strptime(e, "%Y-%m-%dT%H:%M:%S.%f").timestamp() for e in values[:, 1]])
+    #tunix = np.array([datetime.datetime.strptime(e, "%Y-%m-%dT%H:%M:%S.%f").timestamp() for e in values[:, 1]])
     real_state = dynamic_data[:, :6]
     sim_state = dynamic_data[:, 6:]
 
-    return np.array(real_state, dtype=np.float32), np.array(sim_state, dtype=np.float32), tunix
+    return np.array(real_state, dtype=np.float32), np.array(sim_state, dtype=np.float32)
+
+
+def generate_in_out_err(state_r, state_s,l=3):
+    x, y, z, Vx, Vy, Vz = state_r[:, 0], state_r[:, 1], state_r[:, 2], state_r[:, 3], state_r[:, 4], state_r[:, 5]
+    sx, sy, sz, sVx, sVy, sVz =  state_s[:, 0], state_s[:, 1], state_s[:, 2], state_s[:, 3], state_s[:, 4], state_s[:, 5]
+
+    p_x, c_x = x[l:], sx[l:]
+    p_y, c_y = y[l:], sy[l:]
+    p_z, c_z = z[l:], sz[l:]
+
+    p_Vx, c_Vx = Vx[l:], sVx[l:]
+    p_Vy, c_Vy = Vy[l:], sVy[l:]
+    p_Vz, c_Vz = Vz[l:], sVz[l:]
+
+    source = np.vstack([c_x, c_y, c_z, c_Vx, c_Vy, c_Vz]).T
+    target = np.vstack([p_x, p_y, p_z, p_Vx, p_Vy, p_Vz]).T
+    error = target - source
+
+    return source, target, error
 
 
 def smape(satellite_predicted_values, satellite_true_values): 
@@ -45,58 +65,37 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     df = pd.read_csv(args.train, sep=',')
-    #test_df = pd.read_csv(args.test, sep=',')
-
-    #print(df.columns)
-    #print(df.head)
-    #print(df.describe())
-    #print(dt.timestamp())
+    test_df = pd.read_csv(args.test, sep=',')
+    set_id = pd.unique(test_df['sat_id'])
 
     hist = []
-    coeff = defaultdict(list)
+    d = {}
+    l = 3
+    track = lambda arg: np.vstack([arg[i:arg.shape[0]+i-l] for i in range(l+1)]).T
+    dmatrix_creator = lambda arg: np.concatenate([track(e) for e in arg.T], axis=1)
 
-    a, b, t = split_data(df.values)
-    #print((a - b) / a * 100)
-    h = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5])
+    for i in set_id:
+        a, b = split_data(df[df['sat_id'] == i].values)
 
+        loc_var = np.array(test_df[test_df['sat_id'] == i].values[:, -6:], dtype=np.float32)
+        dmatrix = np.concatenate([b, loc_var], axis=0)
+        dmatrix = dmatrix_creator(dmatrix)
+        print(f'Dmatrix {dmatrix.shape}')
+        dmatrix -= dmatrix.mean(axis=0)
+        dmatrix /= dmatrix.std(axis=0)
 
-    #for i in range(600):
-        #a, b, t = split_data(df.loc[df['sat_id'] == i].values)
-        #print(f'Epoch {i+1}')
-        #print((a - b) / a * 100)
-        #h = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5])
-        #h, c = sindy.compute_sindy(a[:, 0], a[:, 1], a[:, 2], a[:, 3], a[:, 4], a[:,5], b[:, 0], b[:, 1], b[:, 2], b[:, 3], b[:, 4], b[:,5], t)
-        #hist.append(h)#, coeff['x'].append(c[:, 0]), coeff['y'].append(c[:, 1]), coeff['z'].append(c[:, 2]), coeff['Vx'].append(c[:, 3])
-        #coeff['Vy'].append(c[:, 4]), coeff['Vz'].append(c[:, 5])
+        source, target, error =  generate_in_out_err(a, b, l)
+        clf, h = sindy.compute_model(dmatrix[:b.shape[0]-l, :], target, source, error)
+
+        d[i] = clf.predict(dmatrix[b.shape[0]-l:, :]) + loc_var
+
+        hist.append(h)
 
         # if i % 100 == 0:
         #     visualize_trajectory(a[:, 0], a[:, 1], a[:, 2], b[:, 0], b[:, 1], b[:, 2])
         #     input('press a key')
 
-
-
     hist = np.array(hist)
     print(f'mean {hist.mean()} std {hist.std()}, median {np.median(hist)}')
     plt.hist(hist)
     plt.show()
-
-
-    dynamics = ['1', 't', '1/r', 'r', 'v', 'x', 'y', 'z', 'Vx', 'Vy', 'Vz']
-    dynamics = list(itertools.combinations(dynamics, 3)) + ['t', '1/r', 'r', 'v', 'x', 'y', 'z', 'Vx', 'Vy', 'Vz']
-
-    for k, v in coeff.items():
-        print(k)
-        coeff = np.vstack(v)
-        np.set_printoptions(threshold=np.inf)
-        print(f'All coeff \n{coeff.shape}')
-        for c, d in zip(coeff.T, dynamics):
-            (_, p_val) = stats.ttest_1samp(c, 0.0)
-            if k in ['x', 'y', 'z']:
-                threshold = 1e-3
-            else:
-                threshold = 0.05
-
-            if p_val < threshold:
-                print(p_val,c.shape, ''.join(d))
-
-    # print(f'SMAPE {100 * (1 - smape(a, b))}')
