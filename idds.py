@@ -1,7 +1,10 @@
 import argparse
+from collections import defaultdict
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.cluster import SpectralClustering
+import progressbar
 import random
 import datetime
 import sindy
@@ -58,6 +61,36 @@ def smape(satellite_predicted_values, satellite_true_values):
         /  (np.abs(satellite_predicted_values) + np.abs(satellite_true_values))))
 
 
+def tr_clustering(df):
+    sat_id = pd.unique(df['sat_id'])
+    data = []
+    d = {}
+    table = defaultdict(list)
+    
+    for i in progressbar.progressbar(sat_id): 
+        track = np.array(df[df['sat_id'] == i].values[:, -6:], dtype=np.float32)
+        d[i] = track
+        #mean_vec = track.mean(axis=0)
+        mean_std = track.std(axis=0)
+        #vec = np.concatenate([mean_vec, mean_std])
+        vec =  mean_std
+        data.append(vec)
+
+    data = np.vstack(data)
+
+    clustering = SpectralClustering(n_jobs=-1).fit(data)
+    print(f'Labels {clustering.labels_}')
+
+    for i, l in zip(sat_id, clustering.labels_):
+        table[l].append(d[i])
+    
+    for k, v in table.items():
+        table[k]  = np.concatenate(v, axis=0)
+
+    return clustering, table
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-train', help='path to train data.csv')
@@ -66,18 +99,26 @@ if __name__ == '__main__':
 
     df = pd.read_csv(args.train, sep=',')
     test_df = pd.read_csv(args.test, sep=',')
-    set_id = pd.unique(test_df['sat_id'])
+    sat_id = pd.unique(test_df['sat_id'])
 
     hist = []
-    d = {}
+    d = []
     l = 3
     track = lambda arg: np.vstack([arg[i:arg.shape[0]+i-l] for i in range(l+1)]).T
     dmatrix_creator = lambda arg: np.concatenate([track(e) for e in arg.T], axis=1)
 
-    for i in set_id:
+    clustering, table = tr_clustering(test_df)
+
+    for i in progressbar.progressbar(sat_id):
         a, b = split_data(df[df['sat_id'] == i].values)
 
         loc_var = np.array(test_df[test_df['sat_id'] == i].values[:, -6:], dtype=np.float32)
+        label = clustering.predict(loc_var.std(axis=0).reshape(1, 6))
+        print(f'Sat id {i}, Cluster {label}')
+        context = table[label]
+
+        id_col = np.array(test_df[test_df['sat_id'] == i].values[:, 0], dtype=np.int)
+        b = np.concatenate([context, b])
         dmatrix = np.concatenate([b, loc_var], axis=0)
         dmatrix = dmatrix_creator(dmatrix)
         print(f'Dmatrix {dmatrix.shape}')
@@ -85,15 +126,21 @@ if __name__ == '__main__':
         dmatrix /= dmatrix.std(axis=0)
 
         source, target, error =  generate_in_out_err(a, b, l)
-        clf, h = sindy.compute_model(dmatrix[:b.shape[0]-l, :], target, source, error)
+        clf, h = sindy.test_model(dmatrix[:b.shape[0]-l, :], target, source, error)
+        #clf = sindy.train_model(dmatrix[:b.shape[0]-l, :], target, source, error)
 
-        d[i] = clf.predict(dmatrix[b.shape[0]-l:, :]) + loc_var
+        # prediction = clf.predict(dmatrix[b.shape[0]-l:, :]) + loc_var
+        # prediction = np.concatenate([id_col.reshape(loc_var.shape[0], 1), prediction], axis=1)
+        # d.append(prediction)
 
         hist.append(h)
 
         # if i % 100 == 0:
         #     visualize_trajectory(a[:, 0], a[:, 1], a[:, 2], b[:, 0], b[:, 1], b[:, 2])
         #     input('press a key')
+
+    # d = np.concatenate(d, axis=0)
+    # save_submission(d)
 
     hist = np.array(hist)
     print(f'mean {hist.mean()} std {hist.std()}, median {np.median(hist)}')

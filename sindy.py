@@ -4,7 +4,7 @@ from sklearn import linear_model
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import LinearSVR
 from sklearn.gaussian_process import GaussianProcessRegressor as gp
-from sklearn.gaussian_process.kernels import WhiteKernel, ExpSineSquared, RBF, RationalQuadratic, DotProduct, CompoundKernel
+from sklearn.gaussian_process.kernels import WhiteKernel, ExpSineSquared, RBF, RationalQuadratic, DotProduct, Sum, Product, Matern
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.tree import DecisionTreeRegressor
 import idds
@@ -28,23 +28,36 @@ def compute_sindy_for_lorenz():
     print(clf.score(dmatrix.T, (p_z - c_z) / delta))
 
 
-def compute_model(dmatrix, target, source, error): 
+def train_model(dmatrix, target, source, error): 
     print(f'The shape of data matrix {dmatrix.shape}')
+
+    clf = MultiOutputRegressor(estimator=KernelRidge(kernel=Product(Product(DotProduct(), Matern()), Product(DotProduct(), Matern()))))# baseline 81.83
+    #clf = MultiOutputRegressor(estimator=KernelRidge(kernel=DotProduct()))
+
+    clf.fit(dmatrix, error)
+
+    return clf
+
+
+def test_model(dmatrix, target, source, error): 
+    # print(f'The shape of data matrix {dmatrix.shape}')
     th = int(dmatrix.shape[0] * 0.8)
 
-    clf = MultiOutputRegressor(estimator=KernelRidge(kernel=RationalQuadratic()))
-    #clf = MultiOutputRegressor(estimator=DecisionTreeRegressor(criterion='mae', max_depth=5))
+    clf = MultiOutputRegressor(estimator=KernelRidge(kernel=Product(Product(DotProduct(), Matern()), Product(DotProduct(), Matern()))))# baseline 81.83 on contest
+    #clf = MultiOutputRegressor(estimator=gp(kernel=Sum(Product(DotProduct(), Matern()), Product(WhiteKernel(), RationalQuadratic()))))
 
     step = 1
+    #clf.fit(dmatrix, error)
     clf.fit(dmatrix[:th:step, :], error[:th:step, :])
-    score = clf.score(dmatrix[th:, :], error[th:, :])
+    # score = clf.score(dmatrix[th:, :], error[th:, :])
     predict = clf.predict(dmatrix)
-    print(f'Score {score}')
+    # print(f'Score {score}')
     
     sm = 100 * (1 - idds.smape(target[th:, :], (predict + source)[th:, :]))
-    print(f'SMAPE {sm}')
-    st_sm = 100 * (1 - idds.smape(target[th:, :], source[th:, :]))
-    print(f'SMAPE {st_sm}')
+    # print(f'SMAPE {sm}')
+    # st_sm = 100 * (1 - idds.smape(target[th:, :], source[th:, :]))
+    # print(f'SMAPE {st_sm}')
+     
 
     return clf, sm
 
