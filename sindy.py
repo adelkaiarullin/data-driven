@@ -1,14 +1,30 @@
 import numpy as np
 from sklearn import linear_model
-import lorenz
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from lorenz import lorenz
 
 
-def train():
-    pass
+def vis_trj(data):
+    ax = fig.gca(projection='3d')
+    ax.plot(data[:,0], data[:,1], data[:,2], lw=1)
+    ax.set_xlabel("X Axis")
+    ax.set_ylabel("Y Axis")
+    ax.set_zlabel("Z Axis")
+    ax.set_title("Lorenz Attractor")
+
+    # plt.show()
 
 
-def test():
-    pass
+def get_data(start_point, num_point, delta, control):
+    data = np.zeros((num_point, 3), np.float32)
+    for i in range(num_point):
+        dx, dy, dz = lorenz(*(start_point + control[i]))
+        ds = np.array([dx, dy, dz]) * delta 
+        data[i] = start_point
+        start_point += ds
+
+    return data        
 
 
 def compute_sindy_for_lorenz():
@@ -29,4 +45,16 @@ def compute_sindy_for_lorenz():
 
 
 if __name__ == '__main__':
-    compute_sindy_for_lorenz()
+    n = 500
+    t = 10
+    delta = t / n
+    arg = np.linspace(0, t, n)
+    control1 = arg * 0
+    control = 5 * np.sin(20 * arg)
+    data = get_data(np.array([-8., 8., 27.]), n, delta, control)
+
+    fig = plt.figure()
+    vis_trj(data)
+    data = get_data(np.array([-8., 8., 27.]), n, delta, control1)
+    vis_trj(data)
+    plt.show()
