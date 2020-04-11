@@ -41,6 +41,7 @@ def unpack_collection(obs):
 
 def compute_model(obs, delta):
     c_x, c_y, c_z, u, n_x, n_y, n_z = unpack_collection(obs)
+
     kernel = C(10.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
     gp = MultiOutputRegressor(GaussianProcessRegressor(kernel=kernel))
     br = MultiOutputRegressor(BayesianRidge())
