@@ -98,13 +98,10 @@ def train_model(obs, delta, kernel_f=None):
     score = gp.score(test_x, test_y)
     print(f'Score {score}')
 
-    return gp, data_matrix, target#test_x, test_y
+    return gp, data_matrix, target
 
 
 if __name__ == '__main__':
     collection = generate_data(3)
     dt = .05
-    # kernel = C(1) ** 2 * DotProduct(sigma_0=1) + C(1) ** 2 * RationalQuadratic(alpha=1, length_scale=1) + \
-    #          DotProduct(sigma_0=1) * C(1) ** 2 * RationalQuadratic(alpha=1, length_scale=1)
-    #compute_model(collection, dt, kernel)
     compute_model(collection, dt)

@@ -55,6 +55,3 @@ if __name__ == '__main__':
 
     ga.run()
     print(ga.best_individual())
-    # (0.9689786656470482,
-    #  1 ** 2 * DotProduct(sigma_0=1) + 1 ** 2 * RationalQuadratic(alpha=1, length_scale=1) + 1 ** 2 * DotProduct(
-    #      sigma_0=1) * 1 ** 2 * RationalQuadratic(alpha=1, length_scale=1))
